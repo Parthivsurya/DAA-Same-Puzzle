@@ -12,7 +12,6 @@ public class GameEngine {
         List<int[]> block = new ArrayList<>();
         if (r < 0 || r >= board.length || c < 0 || c >= board[0].length) return block;
         if (board[r][c] != color) return block;
-        
         boolean[][] visited = new boolean[board.length][board[0].length];
         findBlockRecursive(board, r, c, color, visited, block);
         return block;

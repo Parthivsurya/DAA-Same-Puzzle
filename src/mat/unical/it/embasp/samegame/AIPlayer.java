@@ -17,12 +17,15 @@ public class AIPlayer {
     }
 
     private AIStrategy getStrategy(int mode) {
+        // For Review 1, we only need Greedy Logic.
+        // We map other modes to Greedy as well to simplify the presentation
+        // or effectively "remove" the complex logic while keeping the UI.
         switch (mode) {
             case 0: return new GreedyStrategy();
-            case 1: return new DivideAndConquerStrategy();
-            case 2: return new BacktrackingStrategy(2);
-            case 3: return new DynamicProgrammingStrategy(2);
-            case 4: return new RandomStrategy();
+            case 1: return new GreedyStrategy(); // Was D&C
+            case 2: return new GreedyStrategy(); // Was Backtracking
+            case 3: return new GreedyStrategy(); // Was DP
+            case 4: return new RandomStrategy(); // Keep Random as 'Beginner'
             default: return new RandomStrategy();
         }
     }
