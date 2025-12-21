@@ -5,10 +5,7 @@ import java.awt.Color;
 import java.awt.GridLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
-
 import javax.swing.ButtonGroup;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -47,8 +44,7 @@ public class MainClass {
     private static int NUM_COLORS = 4; // Default
     private static char[][] samegame; 
     
-    // For DP
-    private static java.util.Map<String, Integer> memoMap = new java.util.HashMap<>();
+    private static AIPlayer aiPlayer = new AIPlayer();
     
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
@@ -187,12 +183,12 @@ public class MainClass {
     private static void showHint() {
         if (finished || !isPlayerTurn) return;
         
-        // Use Greedy or Backtracking to find a "good" move
-        int[] hintMove = getGreedyMove(samegame); 
+        // Use Greedy for hint
+        int[] hintMove = aiPlayer.getMove(aiMode, samegame); 
         
         if (hintMove != null) {
             char blockColorChar = samegame[hintMove[0]][hintMove[1]];
-            List<int[]> block = findBlock(hintMove[0], hintMove[1], blockColorChar);
+            List<int[]> block = GameEngine.findBlock(samegame, hintMove[0], hintMove[1], blockColorChar);
             
             Color contrastColor = getContrastColor(blockColorChar);
             
@@ -238,31 +234,14 @@ public class MainClass {
     }
     
     private static void startGame() {
-        Random r = new Random();
-        
         // Reset state
         playerScore = 0;
         aiScore = 0;
         isPlayerTurn = true;
         finished = false;
-        memoMap.clear();
-        
-        // Re-init board
-        samegame = new char[ROWS][COLS];
-        
-        for (int i = 0; i < ROWS; ++i)
-            for (int j = 0; j < COLS; ++j) {
-                int colore =  r.nextInt(0, NUM_COLORS); 
-                switch (colore) {
-                case 0: samegame[i][j] = 'b'; break; // Blue
-                case 1: samegame[i][j] = 'g'; break; // Yellow
-                case 2: samegame[i][j] = 'r'; break; // Red
-                case 3: samegame[i][j] = 'v'; break; // Green
-                case 4: samegame[i][j] = 'o'; break; // Orange
-                case 5: samegame[i][j] = 'm'; break; // Magenta
-                case 6: samegame[i][j] = 'c'; break; // Cyan
-                }
-            }
+        if(aiPlayer != null) aiPlayer.clearMemo();
+                
+        samegame = GameEngine.createNewBoard(ROWS, COLS, NUM_COLORS);
         
         refreshBoardUI();
     }
@@ -338,7 +317,7 @@ public class MainClass {
         if (!isPlayerTurn) return; 
         if (samegame[r][c] == '0') return;
         
-        List<int[]> block = findBlock(r, c, samegame[r][c]);
+        List<int[]> block = GameEngine.findBlock(samegame, r, c, samegame[r][c]);
         if (block.size() < 2) return;
         
         // Remove block
@@ -347,7 +326,7 @@ public class MainClass {
         }
         
         playerScore += (int)Math.pow(block.size() - 1, 2);
-        cambiaMatrice(samegame);
+        GameEngine.applyGravity(samegame);
         checkGameOver();
         refreshBoardUI();
         
@@ -371,21 +350,11 @@ public class MainClass {
         if (finished) return;
         System.out.println("AI Thinking... Mode: " + aiMode);
         
-        int[] bestMove = null;
-        switch (aiMode) {
-        case 0: bestMove = getGreedyMove(samegame); break;
-        case 1: bestMove = getDCMove(samegame); break;
-        case 2: bestMove = getBacktrackingMove(samegame, 2); break;
-        case 3: 
-            memoMap.clear(); 
-            bestMove = getDPMove(samegame, 2); 
-            break;
-        case 4: bestMove = getRandomMove(samegame); break;
-        }
+        int[] bestMove = aiPlayer.getMove(aiMode, samegame);
         
         if (bestMove != null) {
             // Highlight
-            List<int[]> block = findBlock(bestMove[0], bestMove[1], samegame[bestMove[0]][bestMove[1]]);
+            List<int[]> block = GameEngine.findBlock(samegame, bestMove[0], bestMove[1], samegame[bestMove[0]][bestMove[1]]);
             for (int[] cell : block) {
                 JTextField tf = gridUI[cell[0]][cell[1]];
                 tf.setBorder(new LineBorder(Color.BLACK, 3));
@@ -401,8 +370,6 @@ public class MainClass {
         } else {
             // No moves
             checkGameOver();
-            // If AI has no moves, check logic actually ends game in checkGameOver usually.
-            // But if we return here, we must ensure state is consistent.
             if (!finished) { 
                 isPlayerTurn = true;
                 updateTitle();
@@ -412,14 +379,14 @@ public class MainClass {
     
     // Separated execution logic
     private static void executeAIMove(int[] bestMove) {
-        List<int[]> block = findBlock(bestMove[0], bestMove[1], samegame[bestMove[0]][bestMove[1]]);
+        List<int[]> block = GameEngine.findBlock(samegame, bestMove[0], bestMove[1], samegame[bestMove[0]][bestMove[1]]);
         int score = (int)Math.pow(block.size() - 1, 2);
         for (int[] cell : block) {
             samegame[cell[0]][cell[1]] = '0';
         }
         aiScore += score;
         
-        cambiaMatrice(samegame);
+        GameEngine.applyGravity(samegame);
         checkGameOver();
         
         if (!finished) {
@@ -429,215 +396,8 @@ public class MainClass {
         refreshBoardUI();
     }
     
-    // --- AI Strategies ---
-    
-    private static int[] getRandomMove(char[][] board) {
-        List<int[]> moves = getAllMoves(board);
-        if (moves.isEmpty()) return null;
-        Random r = new Random();
-        return moves.get(r.nextInt(moves.size()));
-    }
-    
-    private static int[] getGreedyMove(char[][] board) {
-        List<int[]> moves = getAllMoves(board);
-        moves.sort((a, b) -> b[2] - a[2]); 
-        if (moves.isEmpty()) return null;
-        return moves.get(0); 
-    }
-    
-    private static int[] getDCMove(char[][] board) {
-        // Dynamic midpoint
-        int mid = board[0].length / 2;
-        int[] bestLeft = getBestLocalMove(board, 0, mid);
-        int[] bestRight = getBestLocalMove(board, mid, board[0].length);
-        
-        if (bestLeft == null) return bestRight;
-        if (bestRight == null) return bestLeft;
-        
-        if (bestLeft[2] >= bestRight[2]) return bestLeft;
-        else return bestRight;
-    }
-    
-    private static int[] getBestLocalMove(char[][] board, int starCol, int endCol) {
-        int maxScore = -1;
-        int[] best = null;
-        boolean[][] visited = new boolean[board.length][board[0].length];
-        
-        for(int i=0; i<board.length; ++i) {
-            for(int j=starCol; j<endCol; ++j) {
-                if(board[i][j] != '0' && !visited[i][j]) {
-                    List<int[]> block = findBlockInBoard(board, i, j, board[i][j]);
-                    for(int[] b : block) visited[b[0]][b[1]] = true; 
-                    
-                    if (block.size() >= 2) {
-                        int score = (int)Math.pow(block.size() - 1, 2);
-                        if (score > maxScore) {
-                            maxScore = score;
-                            best = new int[] {i, j, score};
-                        }
-                    }
-                }
-            }
-        }
-        return best;
-    }
-    
-    private static int[] getBacktrackingMove(char[][] board, int depth) {
-        if (depth == 0) return getGreedyMove(board);
-        
-        List<int[]> moves = getAllMoves(board);
-        moves.sort((a, b) -> b[2] - a[2]);
-        
-        int branchLimit = Math.min(moves.size(), 5);
-        int maxVal = -1;
-        int[] bestMove = null;
-        
-        for(int i=0; i<branchLimit; ++i) {
-            int[] move = moves.get(i);
-            int currentScore = move[2];
-            char[][] nextBoard = copyBoard(board);
-            simulateMove(nextBoard, move[0], move[1]);
-            int futureVal = backtrackingVal(nextBoard, depth - 1);
-            int totalVal = currentScore + futureVal;
-            if (totalVal > maxVal) {
-                maxVal = totalVal;
-                bestMove = move;
-            }
-        }
-        if (bestMove == null && !moves.isEmpty()) return moves.get(0); 
-        return bestMove;
-    }
-    
-    private static int backtrackingVal(char[][] board, int depth) {
-        if (depth == 0) return 0;
-        List<int[]> moves = getAllMoves(board);
-        if (moves.isEmpty()) return 0;
-        moves.sort((a, b) -> b[2] - a[2]);
-        return moves.get(0)[2];
-    }
-
-    private static int[] getDPMove(char[][] board, int depth) {
-        List<int[]> moves = getAllMoves(board);
-        moves.sort((a, b) -> b[2] - a[2]);
-        
-        int branchLimit = Math.min(moves.size(), 5);
-        int maxVal = -1;
-        int[] bestMove = null;
-        
-        for(int i=0; i<branchLimit; ++i) {
-            int[] move = moves.get(i);
-            char[][] nextBoard = copyBoard(board);
-            simulateMove(nextBoard, move[0], move[1]);
-            int val = move[2] + getDPValue(nextBoard, depth - 1);
-            if (val > maxVal) {
-                maxVal = val;
-                bestMove = move;
-            }
-        }
-        return bestMove;
-    }
-    
-    private static int getDPValue(char[][] board, int depth) {
-        if (depth == 0) return 0;
-        
-        String key = boardToString(board) + ":" + depth;
-        if (memoMap.containsKey(key)) return memoMap.get(key);
-        
-        List<int[]> moves = getAllMoves(board);
-        if (moves.isEmpty()) return 0;
-        moves.sort((a, b) -> b[2] - a[2]);
-        
-        int best = 0;
-        int branchLimit = Math.min(moves.size(), 3); 
-        
-        for(int i=0; i<branchLimit; ++i) {
-            char[][] next = copyBoard(board);
-            simulateMove(next, moves.get(i)[0], moves.get(i)[1]);
-            int val = moves.get(i)[2] + getDPValue(next, depth - 1);
-            if (val > best) best = val;
-        }
-        
-        memoMap.put(key, best);
-        return best;
-    }
-    
-    // --- Helpers ---
-    
-    private static List<int[]> getAllMoves(char[][] board) {
-        List<int[]> moves = new ArrayList<>();
-        boolean[][] visited = new boolean[board.length][board[0].length];
-        for(int i=0; i<board.length; ++i) {
-            for(int j=0; j<board[0].length; ++j) {
-                if(board[i][j] != '0' && !visited[i][j]) {
-                    List<int[]> block = findBlockInBoard(board, i, j, board[i][j]);
-                    for(int[] b : block) visited[b[0]][b[1]] = true;
-                    if (block.size() >= 2) {
-                        int score = (int)Math.pow(block.size() - 1, 2);
-                        moves.add(new int[] {i, j, score});
-                    }
-                }
-            }
-        }
-        return moves;
-    }
-    
-    private static void simulateMove(char[][] board, int r, int c) {
-        List<int[]> block = findBlockInBoard(board, r, c, board[r][c]);
-        for(int[] cell : block) board[cell[0]][cell[1]] = '0';
-        cambiaMatrice(board);
-    }
-    
-    private static char[][] copyBoard(char[][] src) {
-        char[][] dest = new char[src.length][src[0].length];
-        for(int i=0; i<src.length; ++i)
-            System.arraycopy(src[i], 0, dest[i], 0, src[i].length);
-        return dest;
-    }
-    
-    private static String boardToString(char[][] board) {
-        StringBuilder sb = new StringBuilder();
-        for(char[] row : board) sb.append(row);
-        return sb.toString();
-    }
-    
-    private static List<int[]> findBlockInBoard(char[][] board, int r, int c, char color) {
-        List<int[]> block = new ArrayList<>();
-        boolean[][] visited = new boolean[board.length][board[0].length];
-        findBlockRecursiveInBoard(board, r, c, color, visited, block);
-        return block;
-    }
-    
-    private static void findBlockRecursiveInBoard(char[][] board, int r, int c, char color, boolean[][] visited, List<int[]> block) {
-        if (r < 0 || r >= board.length || c < 0 || c >= board[0].length) return;
-        if (visited[r][c]) return;
-        if (board[r][c] != color) return;
-        
-        visited[r][c] = true;
-        block.add(new int[] {r, c});
-        
-        findBlockRecursiveInBoard(board, r + 1, c, color, visited, block);
-        findBlockRecursiveInBoard(board, r - 1, c, color, visited, block);
-        findBlockRecursiveInBoard(board, r, c + 1, color, visited, block);
-        findBlockRecursiveInBoard(board, r, c - 1, color, visited, block);
-    }
-    
-    private static List<int[]> findBlock(int r, int c, char color) {
-        return findBlockInBoard(samegame, r, c, color);
-    }
-
     private static void checkGameOver() {
-        boolean movePossible = false;
-        // Use current ROWS/COLS
-        for(int i=0; i<ROWS; ++i) {
-            for(int j=0; j<COLS; ++j) {
-                if(samegame[i][j] != '0') {
-                    if (i+1 < ROWS && samegame[i+1][j] == samegame[i][j]) movePossible = true;
-                    if (j+1 < COLS && samegame[i][j+1] == samegame[i][j]) movePossible = true;
-                }
-            }
-        }
-        
-        if (!movePossible) {
+        if (GameEngine.isGameOver(samegame)) {
             finished = true;
             showGameOverDialog();
         }
@@ -665,50 +425,5 @@ public class MainClass {
         
         String msg = "Algorithm: " + algoName + "\nYou: " + playerScore + " | AI: " + aiScore + "\n" + winner;
         JOptionPane.showMessageDialog(frame, msg, "Game Over", JOptionPane.INFORMATION_MESSAGE);
-    }
-
-    private static void cambiaMatrice(char[][] tabella) {
-        int R = tabella.length;
-        int C = tabella[0].length;
-        
-        for (int i = 0; i < R; ++i) {
-            for (int j = 0; j < C; ++j) {
-                if (tabella[i][j] == '0') aggiornaColonna(tabella, j);
-            }
-        }
-        
-        for(int j=0; j<C-1; ++j) {
-           if(colonnaVuota(tabella, j)) {
-               // find next non-empty
-               int next = j+1;
-               while(next < C && colonnaVuota(tabella, next)) next++;
-               if(next < C) {
-                   copiaColonna(tabella, j, next);
-               }
-           }
-        }
-    } 
-    
-    private static boolean colonnaVuota(char[][] tabella, int j) {
-        for (int i = 0; i < tabella.length; ++i)
-            if (tabella[i][j] != '0') return false;
-        return true;
-    } 
-    
-    private static void copiaColonna(char[][] tabella, int dest, int src) {
-        for (int i = 0; i < tabella.length; ++i) { 
-            tabella[i][dest] = tabella[i][src]; 
-            tabella[i][src] = '0'; 
-        }
-    } 
-
-    private static void aggiornaColonna(char[][] tabella, int j) {
-        int R = tabella.length;
-        char[] tmp = new char[R];
-        int c = 0;
-        for (int i = 0; i < R; ++i)
-            if (tabella[i][j] != '0') tmp[c++] = tabella[i][j];
-        for (; c < tmp.length; ++c) tmp[c] = '0';
-        for (int i = 0; i < R; ++i) tabella[i][j] = tmp[i];
     }
 }
