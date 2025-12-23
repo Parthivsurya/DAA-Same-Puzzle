@@ -16,7 +16,6 @@ public class GameEngine {
         findBlockRecursive(board, r, c, color, visited, block);
         return block;
     }
-    
     private static void findBlockRecursive(char[][] board, int r, int c, char color, boolean[][] visited, List<int[]> block) {
         if (r < 0 || r >= board.length || c < 0 || c >= board[0].length) return;
         if (visited[r][c]) return;
@@ -93,14 +92,12 @@ public class GameEngine {
         }
         return true;
     }
-
     public static char[][] copyBoard(char[][] src) {
         char[][] dest = new char[src.length][src[0].length];
         for(int i=0; i<src.length; ++i)
             System.arraycopy(src[i], 0, dest[i], 0, src[i].length);
         return dest;
     }
-    
     public static String boardToString(char[][] board) {
         StringBuilder sb = new StringBuilder();
         for(char[] row : board) sb.append(row);
@@ -143,7 +140,6 @@ public class GameEngine {
         }
         return moves;
     }
-    
     public static void simulateMove(char[][] board, int r, int c) {
         List<int[]> block = findBlock(board, r, c, board[r][c]);
         for(int[] cell : block) board[cell[0]][cell[1]] = '0';
