@@ -31,13 +31,11 @@ public class GameEngine {
 
     public static void applyGravity(char[][] board) {
         int R = board.length;
-        int C = board[0].length;
-        
-        // 1. Compact columns (gravity downwards)
+        int C = board[0].length;    
+       // 1. Compact columns (gravity downwards)
         for (int j = 0; j < C; ++j) {
            compactColumn(board, j);
         }
-        
         // 2. Compact rows (shift left if column is empty)
         for(int j=0; j<C-1; ++j) {
            if(isColumnEmpty(board, j)) {

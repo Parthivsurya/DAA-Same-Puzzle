@@ -180,7 +180,6 @@ public class MainClass {
     private static void showHint() {
         if (finished || !isPlayerTurn) return;
         
-        // Use Greedy for hint
         int[] hintMove = aiPlayer.getMove(aiMode, samegame); 
         
         if (hintMove != null) {
@@ -189,7 +188,6 @@ public class MainClass {
             
             Color contrastColor = getContrastColor(blockColorChar);
             
-            // Highlight in Contrast Color
             for (int[] cell : block) {
                 if (cell[0] < ROWS && cell[1] < COLS) {
                     JTextField tf = gridUI[cell[0]][cell[1]];
@@ -200,7 +198,6 @@ public class MainClass {
             }
             frame.repaint();
             
-            // Timer to clear highlight
             Timer t = new Timer(1500, e -> {
                  for (int[] cell : block) {
                     if (cell[0] < ROWS && cell[1] < COLS) {
