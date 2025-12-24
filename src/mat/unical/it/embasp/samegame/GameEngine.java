@@ -6,7 +6,6 @@ import java.util.Random;
 
 public class GameEngine {
 
-    // --- Board Manipulation / Mechanics ---
 
     public static List<int[]> findBlock(char[][] board, int r, int c, char color) {
         List<int[]> block = new ArrayList<>();

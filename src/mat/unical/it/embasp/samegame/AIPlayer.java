@@ -22,7 +22,7 @@ public class AIPlayer {
         // or effectively "remove" the complex logic while keeping the UI.
         switch (mode) {
             case 0: return new GreedyStrategy();
-            case 4: return new RandomStrategy(); // Keep Random as 'Beginner'
+            case 4: return new RandomStrategy(); // Keeping  Random as 'Beginner'
             default: return new RandomStrategy();
         }
     }
