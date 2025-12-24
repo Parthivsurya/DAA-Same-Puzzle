@@ -94,9 +94,6 @@ public class MainClass {
         
         addModeItem(modeMenu, group, "Solo (No AI)", -1);
         addModeItem(modeMenu, group, "Greedy (Review 1)", 0);
-        addModeItem(modeMenu, group, "Divide & Conquer (Review 2)", 1);
-        addModeItem(modeMenu, group, "Backtracking (Review 3)", 2);
-        addModeItem(modeMenu, group, "Dynamic Programming (Review 3)", 3);
         addModeItem(modeMenu, group, "Beginner (Random)", 4);
         
         menuBar.add(modeMenu);

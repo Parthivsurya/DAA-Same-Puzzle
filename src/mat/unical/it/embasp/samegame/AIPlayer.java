@@ -22,9 +22,6 @@ public class AIPlayer {
         // or effectively "remove" the complex logic while keeping the UI.
         switch (mode) {
             case 0: return new GreedyStrategy();
-            case 1: return new GreedyStrategy(); // Was D&C
-            case 2: return new GreedyStrategy(); // Was Backtracking
-            case 3: return new GreedyStrategy(); // Was DP
             case 4: return new RandomStrategy(); // Keep Random as 'Beginner'
             default: return new RandomStrategy();
         }

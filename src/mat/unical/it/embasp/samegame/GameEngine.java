@@ -77,7 +77,6 @@ public class GameEngine {
         // Copy back
         for (int i = 0; i < R; ++i) board[i][j] = tmp[i];
     }
-    
     public static boolean isGameOver(char[][] board) {
         int ROWS = board.length;
         int COLS = board[0].length;
@@ -109,7 +108,7 @@ public class GameEngine {
         char[][] board = new char[rows][cols];
         for (int i = 0; i < rows; ++i)
             for (int j = 0; j < cols; ++j) {
-                int colore =  r.nextInt(numColors); 
+                int colore =  r.nextInt(numColors) ; 
                 switch (colore) {
                 case 0: board[i][j] = 'b'; break; // Blue
                 case 1: board[i][j] = 'g'; break; // Yellow
