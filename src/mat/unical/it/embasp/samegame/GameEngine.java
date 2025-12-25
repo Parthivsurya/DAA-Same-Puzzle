@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Random;
 
 public class GameEngine {
-
-
     public static List<int[]> findBlock(char[][] board, int r, int c, char color) {
         List<int[]> block = new ArrayList<>();
         if (r < 0 || r >= board.length || c < 0 || c >= board[0].length) return block;

@@ -198,6 +198,7 @@ public class MainClass {
             }
             frame.repaint();
             
+            
             Timer t = new Timer(1500, e -> {
                  for (int[] cell : block) {
                     if (cell[0] < ROWS && cell[1] < COLS) {
