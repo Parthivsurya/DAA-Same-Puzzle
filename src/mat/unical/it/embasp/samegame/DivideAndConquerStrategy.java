@@ -79,7 +79,6 @@ public class DivideAndConquerStrategy implements AIStrategy {
         for (int i = 0; i < rows; i++) {
             for (int j = colStart; j < colEnd; j++) {
                 if (board[i][j] != '0' && !visited[i][j]) {
-                    
                     // Use GameEngine to find the block size
                     List<int[]> block = GameEngine.findBlock(board, i, j, board[i][j]);
                     
