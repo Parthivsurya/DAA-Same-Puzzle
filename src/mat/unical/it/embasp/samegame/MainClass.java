@@ -95,7 +95,7 @@ public class MainClass {
         addModeItem(modeMenu, group, "Solo (No AI)", -1);
         addModeItem(modeMenu, group, "Greedy (Review 1)", 0);
         addModeItem(modeMenu, group, "Divide and Conquer (Review 1)", 1);
-
+        addModeItem(modeMenu, group, "DAC - Awaaz", 2);
         addModeItem(modeMenu, group, "Beginner (Random)", 4);
         
         menuBar.add(modeMenu);
@@ -295,7 +295,7 @@ public class MainClass {
             case -1 -> "Solo Mode";
             case 0 -> "Greedy";
             case 1 -> "D&C";
-            case 2 -> "Backtracking";
+            case 2 -> "D&C aw";
             case 3 -> "DP";
             case 4 -> "Beginner";
             default -> "Unknown";
@@ -414,7 +414,7 @@ public class MainClass {
         String algoName = switch(aiMode) {
             case 0 -> "Greedy";
             case 1 -> "D&C";
-            case 2 -> "Backtracking";
+            case 2 -> "D&C aw";
             case 3 -> "DP";
             case 4 -> "Beginner";
             default -> "Unknown";

@@ -23,6 +23,7 @@ public class AIPlayer {
         switch (mode) {
             case 0: return new GreedyStrategy();
             case 1: return new DivideAndConquerStrategy();
+            case 2: return new OneByFourDac();
             case 4: return new RandomStrategy(); // Keeping  Random as 'Beginner'
             default: return new RandomStrategy();
         }

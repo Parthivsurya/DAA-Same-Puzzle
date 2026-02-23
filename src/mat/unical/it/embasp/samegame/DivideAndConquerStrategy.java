@@ -12,24 +12,8 @@ public class DivideAndConquerStrategy implements AIStrategy {
         if (best != null) {
             return new int[] { best.r, best.c };
         }
-        // Fallback: If D&C finds nothing (e.g. empty board), try global search
-        List<int[]> allMoves = GameEngine.getAllMoves(board);
-        if (!allMoves.isEmpty()) {
-             // Return move with highest score
-             int max = -1;
-             int[] bestFallback = null;
-             for(int[] m : allMoves) {
-                 if(m[2] > max) {
-                     max = m[2];
-                     bestFallback = m;
-                 }
-             }
-             return bestFallback;
-        }
-        
         return null;
     }
-    // Helper class to store move info and its score
     private static class MoveResult {
         int r, c;
         int score;
@@ -68,75 +52,43 @@ public class DivideAndConquerStrategy implements AIStrategy {
         return rightBest;
     }
 
-    // Scans a specific region for the best move (Base Case)
     private MoveResult scanRegion(char[][] board, int colStart, int colEnd) {
         int rows = board.length;
         MoveResult bestMove = null;
         int maxScore = -1;
-        // Use a visited array just for this scan to avoid re-counting the same block
         boolean[][] visited = new boolean[rows][board[0].length];
 
         for (int i = 0; i < rows; i++) {
             for (int j = colStart; j < colEnd; j++) {
                 if (board[i][j] != '0' && !visited[i][j]) {
-                    // Use GameEngine to find the block size
-                    List<int[]> block = GameEngine.findBlock(board, i, j, board[i][j]);
+                    List<int[]> block = findBlockBounded(board, i, j, board[i][j], colStart, colEnd);
                     
-                    // Mark visited
                     for(int[] cell : block) {
-                        // Only mark if it's within our region (optimization), 
-                        // but marking globally is safer to prevent double processing 
-                        // if the block meanders in/out.
-                        if (cell[0] < rows && cell[1] < board[0].length) {
-                             visited[cell[0]][cell[1]] = true;
-                        }
+                        visited[cell[0]][cell[1]] = true;
                     }
-
-                    // Check if block size is valid
                     if (block.size() >= 2) {
-                        // Calculate Score
                         int score = (int) Math.pow(block.size() - 1, 2);
-                        
-                        // Use only if it originates in our region? 
-                        // Yes, (i, j) is the seed, which IS in [colStart, colEnd).
-                        
                         if (score > maxScore) {
                             maxScore = score;
                             bestMove = new MoveResult(i, j, score);
                         }
                     }
-                }
-            }
-        }
-        return bestMove;
-    }
-    // Finds the best move that spans across the cut (mid-1 and mid) for ANY row
-    private MoveResult findBestBridge(char[][] board, int mid) {
+                }}}
+        return bestMove;}
+        private MoveResult findBestBridge(char[][] board, int mid) {
         int rows = board.length;
         MoveResult bestBridge = null;
         int maxScore = -1;
-        
-        // Visited array to prevent checking the SAME bridge block multiple times 
-        // (since we scan every row of the cut).
         boolean[] processedRow = new boolean[rows];
 
         for (int i = 0; i < rows; i++) {
-            // Check if there is a piece at the cut boundary
             if (board[i][mid-1] != '0' && !processedRow[i]) {
-                
-                // Get the block
                 List<int[]> block = GameEngine.findBlock(board, i, mid-1, board[i][mid-1]);
-                
-                // Mark rows at the cut for this block so we don't re-process for i+1, i+2...
-                for(int[] cell : block) {
+                    for(int[] cell : block) {
                     if (cell[1] == mid-1) {
                         processedRow[cell[0]] = true;
                     }
                 }
-                // BRIDGE CONDITION: Does this block exist on BOTH sides?
-                // It must have at least one cell with col < mid AND one cell with col >= mid.
-                // Since we started seed at mid-1, we know it has col < mid.
-                // So we just need to check if ANY cell has col >= mid.
                 boolean isBridge = false;
                 for(int[] cell : block) {
                     if (cell[1] >= mid) {
@@ -148,12 +100,34 @@ public class DivideAndConquerStrategy implements AIStrategy {
                     int score = (int) Math.pow(block.size() - 1, 2);
                     if (score > maxScore) {
                         maxScore = score;
-                        // Return the seed we found (i, mid-1)
                         bestBridge = new MoveResult(i, mid-1, score);
                     }
                 }
             }
         }
         return bestBridge;
+    }
+
+    private List<int[]> findBlockBounded(char[][] board, int r, int c, char color, int colStart, int colEnd) {
+        List<int[]> block = new java.util.ArrayList<>();
+        if (r < 0 || r >= board.length || c < colStart || c >= colEnd) return block;
+        if (board[r][c] != color) return block;
+        boolean[][] visited = new boolean[board.length][board[0].length];
+        findBlockRecursiveBounded(board, r, c, color, colStart, colEnd, visited, block);
+        return block;
+    }
+
+    private void findBlockRecursiveBounded(char[][] board, int r, int c, char color, int colStart, int colEnd, boolean[][] visited, List<int[]> block) {
+        if (r < 0 || r >= board.length || c < colStart || c >= colEnd) return;
+        if (visited[r][c]) return;
+        if (board[r][c] != color) return;
+        
+        visited[r][c] = true;
+        block.add(new int[] {r, c});
+        
+        findBlockRecursiveBounded(board, r + 1, c, color, colStart, colEnd, visited, block);
+        findBlockRecursiveBounded(board, r - 1, c, color, colStart, colEnd, visited, block);
+        findBlockRecursiveBounded(board, r, c + 1, color, colStart, colEnd, visited, block);
+        findBlockRecursiveBounded(board, r, c - 1, color, colStart, colEnd, visited, block);
     }
 }
